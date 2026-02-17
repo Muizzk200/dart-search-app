@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # DART SDSE V1.0
 
 ## Short Description Search Engine
@@ -295,3 +296,7 @@ For issues, suggestions, or questions about DART SDSE V1.0, please contact MUIZZ
 
 **Last Updated:** January 2025  
 **Status:** Active & Maintained
+=======
+# dart-search-app
+DART Search
+>>>>>>> 267c2d54ee45740ad5c0e764eea394d243db91f3

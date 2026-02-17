@@ -5,7 +5,7 @@ import os
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 ALLOWED_EXTENSIONS = {'xlsx', 'csv'}
 BLANK_LABEL = '(blank)'
@@ -24,24 +24,26 @@ def allowed_file(filename):
 def build_header_index(header_row):
     """
     Build a dynamic header → column index mapping from the first row.
+    Only 'description' is mandatory. Missing columns are mapped to -1.
     
     Args:
         header_row: List of header values from row 1
         
     Returns:
         tuple: (header_index dict, error_message)
-        - header_index: dict mapping normalized header names to column indices
-        - error_message: None if successful, error string if required headers missing
+        - header_index: dict mapping normalized header names to column indices (-1 if missing)
+        - error_message: None if successful, error string if description column is missing
         
     Example:
         header_index = {
             'item': 0,
             'description': 1,
             'product division': 5,
+            'product mgr': -1,  # missing column
             ...
         }
     """
-    REQUIRED_HEADERS = [
+    EXPECTED_HEADERS = [
         'item',
         'description',
         'product division',
@@ -61,15 +63,14 @@ def build_header_index(header_row):
             normalized = str(header).strip().lower()
             header_index[normalized] = idx
     
-    # Validate all required headers exist
-    missing_headers = []
-    for required_header in REQUIRED_HEADERS:
-        if required_header not in header_index:
-            missing_headers.append(required_header)
+    # Check if description column exists (only mandatory column)
+    if 'description' not in header_index:
+        return None, "Missing required 'Description' column"
     
-    if missing_headers:
-        error_msg = f"Missing required columns: {', '.join(missing_headers)}"
-        return None, error_msg
+    # Add missing expected columns with -1 index to indicate they don't exist
+    for expected_header in EXPECTED_HEADERS:
+        if expected_header not in header_index:
+            header_index[expected_header] = -1
     
     return header_index, None
 
@@ -120,21 +121,29 @@ def parse_excel_file(filepath):
         for row in worksheet.iter_rows(min_row=2, values_only=True):
             try:
                 # Skip empty rows (check if description is empty)
-                short_desc = row[header_index['description']] if len(row) > header_index['description'] else None
+                desc_idx = header_index['description']
+                short_desc = row[desc_idx] if len(row) > desc_idx else None
                 if not short_desc or not str(short_desc).strip():
                     continue
                 
+                # Helper function to safely extract column values
+                def get_col_value(col_name):
+                    idx = header_index[col_name]
+                    if idx == -1:  # Column doesn't exist
+                        return None
+                    return row[idx] if len(row) > idx else None
+                
                 # Extract values using header-based index mapping
-                item_no = row[header_index['item']] if len(row) > header_index['item'] else None
-                product_div = row[header_index['product division']] if len(row) > header_index['product division'] else None
-                # Material Group and Material Group Desc extracted via header lookup
-                material_group = row[header_index['material group']] if len(row) > header_index['material group'] else None
-                material_group_desc = row[header_index['material group desc']] if len(row) > header_index['material group desc'] else None
-                mfg_name = row[header_index['mfr name']] if len(row) > header_index['mfr name'] else None
-                mfg_item_no = row[header_index['mfr item']] if len(row) > header_index['mfr item'] else None
-                sales_status = row[header_index['sales status']] if len(row) > header_index['sales status'] else None
-                product_manager = row[header_index['product mgr']] if len(row) > header_index['product mgr'] else None
-                sub_item = row[header_index['sub item']] if len(row) > header_index['sub item'] else None
+                # Handle missing columns gracefully by returning None
+                item_no = get_col_value('item')
+                product_div = get_col_value('product division')
+                material_group = get_col_value('material group')
+                material_group_desc = get_col_value('material group desc')
+                mfg_name = get_col_value('mfr name')
+                mfg_item_no = get_col_value('mfr item')
+                sales_status = get_col_value('sales status')
+                product_manager = get_col_value('product mgr')
+                sub_item = get_col_value('sub item')
 
                 rows.append({
                     'item_no': item_no,
@@ -196,21 +205,29 @@ def parse_csv_file(filepath):
             for r in reader:
                 try:
                     # Skip empty rows (check if description is empty)
-                    short_desc = r[header_index['description']] if len(r) > header_index['description'] else None
+                    desc_idx = header_index['description']
+                    short_desc = r[desc_idx] if len(r) > desc_idx else None
                     if not short_desc or not str(short_desc).strip():
                         continue
                     
+                    # Helper function to safely extract column values
+                    def get_col_value(col_name):
+                        idx = header_index[col_name]
+                        if idx == -1:  # Column doesn't exist
+                            return None
+                        return r[idx] if len(r) > idx else None
+                    
                     # Extract values using header-based index mapping
-                    item_no = r[header_index['item']] if len(r) > header_index['item'] else None
-                    product_div = r[header_index['product division']] if len(r) > header_index['product division'] else None
-                    # Material Group and Material Group Desc extracted via header lookup
-                    material_group = r[header_index['material group']] if len(r) > header_index['material group'] else None
-                    material_group_desc = r[header_index['material group desc']] if len(r) > header_index['material group desc'] else None
-                    mfg_name = r[header_index['mfr name']] if len(r) > header_index['mfr name'] else None
-                    mfg_item_no = r[header_index['mfr item']] if len(r) > header_index['mfr item'] else None
-                    sales_status = r[header_index['sales status']] if len(r) > header_index['sales status'] else None
-                    product_manager = r[header_index['product mgr']] if len(r) > header_index['product mgr'] else None
-                    sub_item = r[header_index['sub item']] if len(r) > header_index['sub item'] else None
+                    # Handle missing columns gracefully by returning None
+                    item_no = get_col_value('item')
+                    product_div = get_col_value('product division')
+                    material_group = get_col_value('material group')
+                    material_group_desc = get_col_value('material group desc')
+                    mfg_name = get_col_value('mfr name')
+                    mfg_item_no = get_col_value('mfr item')
+                    sales_status = get_col_value('sales status')
+                    product_manager = get_col_value('product mgr')
+                    sub_item = get_col_value('sub item')
 
                     rows.append({
                         'item_no': item_no,
@@ -341,6 +358,10 @@ def upload_file():
         
         # Save file
         filename = secure_filename(file.filename)
+        
+        # Ensure uploads folder exists
+        os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+        
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         file.save(filepath)
 
