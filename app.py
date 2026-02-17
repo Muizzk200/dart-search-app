@@ -1,9 +1,12 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify, send_file, g
 import io
 import openpyxl
 import os
 import time
 import tempfile
+import uuid
+import traceback
+import logging
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
@@ -43,6 +46,52 @@ def allowed_file(filename):
 # Ensure the uploads directory exists at module import time so the directory
 # is present when the app is started by a WSGI server (e.g. gunicorn on Render).
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# Basic logger setup
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger('dart_app')
+
+
+# Request/response logging middleware
+@app.before_request
+def start_request():
+    # assign a request id
+    rid = str(uuid.uuid4())
+    g.request_id = rid
+    safe_headers = {}
+    for h in ['Host', 'User-Agent', 'Content-Type', 'Accept', 'Content-Length']:
+        v = request.headers.get(h)
+        if v:
+            safe_headers[h] = v
+    logger.info(f"[RID:{rid}] Incoming {request.method} {request.path} headers={safe_headers}")
+
+
+@app.after_request
+def after_request(response):
+    rid = getattr(g, 'request_id', 'N/A')
+    try:
+        status = response.status_code
+        if status >= 400:
+            # try to get response data (may be bytes/stream); limit size
+            try:
+                body = (response.get_data(as_text=True) or '')[:1000]
+            except Exception:
+                body = '<unavailable>'
+            logger.warning(f"[RID:{rid}] Response {status} for {request.method} {request.path}: {body}")
+        else:
+            logger.info(f"[RID:{rid}] Response {status} for {request.method} {request.path}")
+    except Exception:
+        logger.exception(f"[RID:{rid}] after_request logging failed")
+    return response
+
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    rid = getattr(g, 'request_id', str(uuid.uuid4()))
+    tb = traceback.format_exc()
+    logger.error(f"[RID:{rid}] Unhandled exception during {request.method} {request.path}: {str(e)}\n{tb}")
+    # Return JSON error with request id so client can report it
+    return jsonify({'success': False, 'message': 'Internal server error', 'request_id': rid}), 500
 
 
 def build_header_index(header_row):

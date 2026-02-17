@@ -191,6 +191,49 @@ async function uploadFile() {
     });
 }
 
+// Helper: parse fetch Response to prefer JSON.message, else raw text
+async function parseFetchResponseMessage(res) {
+    try {
+        const data = await res.clone().json();
+        return data?.message || '';
+    } catch (e) {
+        try {
+            const txt = await res.clone().text();
+            return txt || '';
+        } catch (_) {
+            return '';
+        }
+    }
+}
+
+// Helper: fetch with timeout using AbortController
+async function fetchWithTimeout(resource, options = {}, timeout = 30000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeout);
+    try {
+        const resp = await fetch(resource, { ...options, signal: controller.signal });
+        return resp;
+    } finally {
+        clearTimeout(id);
+    }
+}
+
+// Helper: GET with simple retry/backoff for idempotent requests
+async function fetchGetWithRetries(url, opts = {}, retries = 2, backoffMs = 5000) {
+    let attempt = 0;
+    while (true) {
+        try {
+            const res = await fetchWithTimeout(url, { method: 'GET', ...opts }, 20000);
+            return res;
+        } catch (err) {
+            attempt += 1;
+            console.warn(`Fetch GET failed for ${url} attempt ${attempt}:`, err);
+            if (attempt > retries) throw err;
+            await new Promise(r => setTimeout(r, backoffMs * attempt));
+        }
+    }
+}
+
 // Search Handler
 searchBtn.addEventListener('click', performSearch);
 searchInput.addEventListener('keypress', (e) => {
@@ -243,17 +286,17 @@ async function performSearch() {
             material_group_desc: checkboxValues(materialGroupDescFilter)
         };
 
-        const response = await fetch('/search', {
+        const response = await fetchWithTimeout('/search', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ keywords, filters })
-        });
-        
-        const data = await response.json();
-        
+        }, 30000);
+
+        let data = {};
         if (response.ok) {
+            try { data = await response.json(); } catch (e) { data = {}; }
             if (data.no_match || data.results.length === 0) {
                 resultsContainer.innerHTML = `
                     <div class="no-match-message">
@@ -270,11 +313,17 @@ async function performSearch() {
                 updateFiltersFromResults(data.results);
             }
         } else {
-            showStatus(searchStatus, data.message, 'error');
+            // parse message (JSON or text) and show friendly 502 message when applicable
+            const parsedMsg = await parseFetchResponseMessage(response);
+            console.warn('Search request failed', response.status, parsedMsg);
+            const userMsg = response.status === 502 ? 'Service temporarily unavailable (502). Please try again.' : (parsedMsg || `Search failed (status ${response.status})`);
+            showStatus(searchStatus, userMsg, 'error');
             resultsContainer.innerHTML = '<p class="placeholder-text">Search failed. Please try again.</p>';
         }
-    } catch (error) {
-        showStatus(searchStatus, 'Search failed: ' + error.message, 'error');
+        } catch (error) {
+            console.error('Search exception', error);
+            const msg = error?.message || 'Search failed';
+            showStatus(searchStatus, 'Search failed: ' + msg, 'error');
     } finally {
         searchBtn.disabled = false;
         searchBtn.textContent = 'Search';
@@ -307,16 +356,17 @@ async function exportResults() {
 
         const keywords = searchInput.value.trim();
 
-        const res = await fetch('/export', {
+        const res = await fetchWithTimeout('/export', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ keywords, filters })
-        });
+        }, 60000);
 
         if (!res.ok) {
-            let data = {};
-            try { data = await res.json(); } catch (e) {}
-            showStatus(searchStatus, data.message || 'Export failed', 'error');
+            const parsedMsg = await parseFetchResponseMessage(res);
+            console.warn('Export failed', res.status, parsedMsg);
+            const userMsg = res.status === 502 ? 'Service temporarily unavailable (502). Please try again.' : (parsedMsg || `Export failed (status ${res.status})`);
+            showStatus(searchStatus, userMsg, 'error');
             return;
         }
 
@@ -352,8 +402,9 @@ async function exportResults() {
 // Fetch filter options from server and populate selects
 async function fetchFilters() {
     try {
-        const res = await fetch('/filters');
-        const data = await res.json();
+        const res = await fetchGetWithRetries('/filters');
+        let data = {};
+        try { data = await res.json(); } catch (e) { data = {}; }
         if (res.ok && data.filters) {
             // store full options and initialize current options
             fullFilterOptions.manufacturers = data.filters.manufacturers || [];
@@ -392,7 +443,9 @@ async function fetchFilters() {
             attachCheckboxFilterSearch(materialGroupDescSearch, materialGroupDescFilter, 'material_group_descs');
         }
     } catch (err) {
-        console.warn('Failed to load filters', err);
+        console.error('Failed to load filters', err);
+        const userMsg = err?.message || 'Failed to load filters';
+        showStatus(searchStatus, userMsg, 'error');
     }
 }
 
@@ -660,7 +713,7 @@ clearSearchBtn?.addEventListener('click', () => {
 // Clear Upload: clear uploaded file on server and reset UI
 clearUploadBtn?.addEventListener('click', async () => {
     try {
-        const res = await fetch('/clear', { method: 'POST' });
+        const res = await fetchWithTimeout('/clear', { method: 'POST' }, 20000);
         if (res.ok) {
             // reset UI
             isFileLoaded = false;
