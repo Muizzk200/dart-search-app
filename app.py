@@ -2,12 +2,13 @@ from flask import Flask, render_template, request, jsonify, send_file
 import io
 import openpyxl
 import os
+import time
+import tempfile
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-# Use an absolute uploads folder based on the current working directory so
-# the path is stable when running under gunicorn / Render.
-app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
+# Use a temp dir for uploads on Render (safer for ephemeral containers)
+app.config['UPLOAD_FOLDER'] = os.path.join(tempfile.gettempdir(), 'dart_uploads')
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 ALLOWED_EXTENSIONS = {'xlsx', 'csv'}
 BLANK_LABEL = '(blank)'
@@ -17,6 +18,22 @@ loaded_data = {
     'rows': [],
     'filename': None
 }
+
+# Compact field order used for tuple storage. Keep order matching front-end expectations.
+FIELDS = [
+    'item_no',
+    'description',
+    'product_division',
+    'material_group',
+    'material_group_desc',
+    'manufacturer_name',
+    'manufacturer_item_no',
+    'sales_status',
+    'product_manager',
+    'sub_item'
+]
+# Map field name -> index for fast access
+FIELD_IDX = {name: i for i, name in enumerate(FIELDS)}
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
@@ -137,46 +154,39 @@ def parse_excel_file(filepath):
                     continue
                 
                 # Extract values using header-based index mapping
-                # Handle missing columns gracefully by returning None
-                idx = header_index.get('item')
-                item_no = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
-                
-                idx = header_index.get('product division')
-                product_div = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
-                
-                idx = header_index.get('material group')
-                material_group = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
-                
-                idx = header_index.get('material group desc')
-                material_group_desc = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
-                
-                idx = header_index.get('mfr name')
-                mfg_name = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
-                
-                idx = header_index.get('mfr item')
-                mfg_item_no = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
-                
-                idx = header_index.get('sales status')
-                sales_status = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
-                
-                idx = header_index.get('product mgr')
-                product_manager = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
-                
-                idx = header_index.get('sub item')
-                sub_item = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
+                # Handle missing columns gracefully by returning empty string for missing values
+                def val_for(hdr_key):
+                    idx = header_index.get(hdr_key)
+                    if idx is None or idx == -1:
+                        return ''
+                    if len(row) <= idx:
+                        return ''
+                    v = row[idx]
+                    return '' if v is None else v
 
-                rows.append({
-                    'item_no': item_no,
-                    'description': short_desc,
-                    'product_division': product_div,
-                    'material_group': material_group,
-                    'material_group_desc': material_group_desc,
-                    'manufacturer_name': mfg_name,
-                    'manufacturer_item_no': mfg_item_no,
-                    'sales_status': sales_status,
-                    'product_manager': product_manager,
-                    'sub_item': sub_item
-                })
+                item_no = val_for('item')
+                product_div = val_for('product division')
+                material_group = val_for('material group')
+                material_group_desc = val_for('material group desc')
+                mfg_name = val_for('mfr name')
+                mfg_item_no = val_for('mfr item')
+                sales_status = val_for('sales status')
+                product_manager = val_for('product mgr')
+                sub_item = val_for('sub item')
+
+                # Store as compact tuple in FIELDS order
+                rows.append((
+                    item_no,
+                    short_desc,
+                    product_div,
+                    material_group,
+                    material_group_desc,
+                    mfg_name,
+                    mfg_item_no,
+                    sales_status,
+                    product_manager,
+                    sub_item
+                ))
             except (IndexError, TypeError):
                 continue
 
@@ -231,46 +241,37 @@ def parse_csv_file(filepath):
                         continue
                     
                     # Extract values using header-based index mapping
-                    # Handle missing columns gracefully by returning None
-                    idx = header_index.get('item')
-                    item_no = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
-                    
-                    idx = header_index.get('product division')
-                    product_div = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
-                    
-                    idx = header_index.get('material group')
-                    material_group = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
-                    
-                    idx = header_index.get('material group desc')
-                    material_group_desc = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
-                    
-                    idx = header_index.get('mfr name')
-                    mfg_name = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
-                    
-                    idx = header_index.get('mfr item')
-                    mfg_item_no = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
-                    
-                    idx = header_index.get('sales status')
-                    sales_status = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
-                    
-                    idx = header_index.get('product mgr')
-                    product_manager = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
-                    
-                    idx = header_index.get('sub item')
-                    sub_item = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
+                    def val_for(hdr_key):
+                        idx = header_index.get(hdr_key)
+                        if idx is None or idx == -1:
+                            return ''
+                        if len(r) <= idx:
+                            return ''
+                        v = r[idx]
+                        return '' if v is None else v
 
-                    rows.append({
-                        'item_no': item_no,
-                        'description': short_desc,
-                        'product_division': product_div,
-                        'material_group': material_group,
-                        'material_group_desc': material_group_desc,
-                        'manufacturer_name': mfg_name,
-                        'manufacturer_item_no': mfg_item_no,
-                        'sales_status': sales_status,
-                        'product_manager': product_manager,
-                        'sub_item': sub_item
-                    })
+                    item_no = val_for('item')
+                    product_div = val_for('product division')
+                    material_group = val_for('material group')
+                    material_group_desc = val_for('material group desc')
+                    mfg_name = val_for('mfr name')
+                    mfg_item_no = val_for('mfr item')
+                    sales_status = val_for('sales status')
+                    product_manager = val_for('product mgr')
+                    sub_item = val_for('sub item')
+
+                    rows.append((
+                        item_no,
+                        short_desc,
+                        product_div,
+                        material_group,
+                        material_group_desc,
+                        mfg_name,
+                        mfg_item_no,
+                        sales_status,
+                        product_manager,
+                        sub_item
+                    ))
                 except Exception:
                     continue
         
@@ -289,24 +290,35 @@ def _compute_filters(rows):
     material_groups = set()
     material_group_descs = set()
 
+    # rows are stored as tuples in FIELDS order; use FIELD_IDX mapping
     for r in rows:
-        if r.get('manufacturer_name'):
-            manufacturers.add(str(r['manufacturer_name']).strip())
-        if r.get('product_division'):
-            product_divs.add(str(r['product_division']).strip())
-        # Treat empty / missing sales status as a special '(blank)' option
-        if r.get('sales_status') is not None and str(r['sales_status']).strip() != '':
-            sales_statuses.add(str(r['sales_status']).strip())
+        def get_val(field):
+            v = r[FIELD_IDX[field]] if len(r) > FIELD_IDX[field] else ''
+            return v
+
+        mn = get_val('manufacturer_name')
+        if mn:
+            manufacturers.add(str(mn).strip())
+        pd = get_val('product_division')
+        if pd:
+            product_divs.add(str(pd).strip())
+        ss = get_val('sales_status')
+        if ss is not None and str(ss).strip() != '':
+            sales_statuses.add(str(ss).strip())
         else:
             sales_statuses.add(BLANK_LABEL)
-        if r.get('product_manager'):
-            product_managers.add(str(r['product_manager']).strip())
-        if r.get('sub_item'):
-            sub_items.add(str(r['sub_item']).strip())
-        if r.get('material_group'):
-            material_groups.add(str(r['material_group']).strip())
-        if r.get('material_group_desc'):
-            material_group_descs.add(str(r['material_group_desc']).strip())
+        pm = get_val('product_manager')
+        if pm:
+            product_managers.add(str(pm).strip())
+        si = get_val('sub_item')
+        if si:
+            sub_items.add(str(si).strip())
+        mg = get_val('material_group')
+        if mg:
+            material_groups.add(str(mg).strip())
+        mgd = get_val('material_group_desc')
+        if mgd:
+            material_group_descs.add(str(mgd).strip())
 
     return {
         'manufacturers': sorted([m for m in manufacturers if m]),
@@ -345,25 +357,32 @@ def search_rows(keywords, rows):
         return []
     
     results = []
-    
+
+    desc_idx = FIELD_IDX['description']
+    item_idx = FIELD_IDX['item_no']
+
     for row in rows:
-        # Collect searchable text fields (converted to lowercase)
-        # Description and Item No are the searchable fields
-        searchable_texts = [
-            str(row['description']).lower() if row['description'] else '',
-            str(row['item_no']).lower() if row['item_no'] else ''
-        ]
-        
-        # Check if ALL search words are found in any single field (OR-based field matching)
-        # A row matches if all keywords appear in Description OR all keywords appear in Item No
+        desc_text = ''
+        item_text = ''
+        try:
+            desc_val = row[desc_idx] if len(row) > desc_idx else ''
+            item_val = row[item_idx] if len(row) > item_idx else ''
+            desc_text = str(desc_val).lower() if desc_val is not None else ''
+            item_text = str(item_val).lower() if item_val is not None else ''
+        except Exception:
+            desc_text = ''
+            item_text = ''
+
+        searchable_texts = [desc_text, item_text]
+
         match_found = any(
             all(word in text for word in search_words)
             for text in searchable_texts
         )
-        
+
         if match_found:
             results.append(row)
-    
+
     return results
 
 @app.route('/')
@@ -388,24 +407,31 @@ def upload_file():
         
         # Save file
         filename = secure_filename(file.filename)
-        
-        # Ensure uploads folder exists
+        # Ensure uploads folder exists (create just before saving)
         os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-        
+
         filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        t0 = time.time()
         file.save(filepath)
+        t1 = time.time()
+        print(f"Saved uploaded file to {filepath} in {t1 - t0:.2f}s")
 
         # Parse file depending on extension
         ext = filename.rsplit('.', 1)[1].lower()
+        # Parse file depending on extension (timing logged)
+        parse_start = time.time()
         if ext == 'csv':
             rows, error = parse_csv_file(filepath)
         else:
             rows, error = parse_excel_file(filepath)
+        parse_end = time.time()
+        if error is None:
+            print(f"Parsed file {filename} in {parse_end - parse_start:.2f}s, rows={len(rows)}")
         
         if error:
             return jsonify({'success': False, 'message': error}), 400
         
-        # Store in memory and compute filter options
+        # Store in memory (rows are tuples) and compute filter options
         loaded_data['rows'] = rows
         loaded_data['filename'] = filename
         loaded_data['filters'] = _compute_filters(rows)
@@ -469,19 +495,20 @@ def _apply_filters(rows, filters):
         return str(row_val).strip() == fstr
 
     def matches(row):
-        if not _matches_value(row.get('manufacturer_name'), mf):
+        # rows are tuples
+        if not _matches_value(row[FIELD_IDX['manufacturer_name']] if len(row) > FIELD_IDX['manufacturer_name'] else None, mf):
             return False
-        if not _matches_value(row.get('product_division'), pd):
+        if not _matches_value(row[FIELD_IDX['product_division']] if len(row) > FIELD_IDX['product_division'] else None, pd):
             return False
-        if not _matches_value(row.get('sales_status'), ss):
+        if not _matches_value(row[FIELD_IDX['sales_status']] if len(row) > FIELD_IDX['sales_status'] else None, ss):
             return False
-        if not _matches_value(row.get('material_group'), mg):
+        if not _matches_value(row[FIELD_IDX['material_group']] if len(row) > FIELD_IDX['material_group'] else None, mg):
             return False
-        if not _matches_value(row.get('material_group_desc'), mgd):
+        if not _matches_value(row[FIELD_IDX['material_group_desc']] if len(row) > FIELD_IDX['material_group_desc'] else None, mgd):
             return False
-        if not _matches_value(row.get('product_manager'), pm):
+        if not _matches_value(row[FIELD_IDX['product_manager']] if len(row) > FIELD_IDX['product_manager'] else None, pm):
             return False
-        if not _matches_value(row.get('sub_item'), si):
+        if not _matches_value(row[FIELD_IDX['sub_item']] if len(row) > FIELD_IDX['sub_item'] else None, si):
             return False
         return True
 
@@ -529,11 +556,17 @@ def search():
                 'no_match': True
             })
         
+        # Convert matched tuple rows to dicts for response (do not convert entire dataset)
+        def to_dict(tpl):
+            return {k: (tpl[i] if i < len(tpl) else '') for i, k in enumerate(FIELDS)}
+
+        result_dicts = [to_dict(r) for r in results]
+
         return jsonify({
             'success': True,
-            'message': f'Found {len(results)} result(s)',
-            'results': results,
-            'count': len(results)
+            'message': f'Found {len(result_dicts)} result(s)',
+            'results': result_dicts,
+            'count': len(result_dicts)
         })
     
     except Exception as e:
@@ -578,18 +611,22 @@ def export_results():
         headers = ['Item No', 'Description', 'Product Division', 'Material Group', 'Material Group Desc', 'Manufacturer Name', 'Manufacturer Item No', 'Sales Status', 'Product Manager', 'Sub Item']
         ws.append(headers)
 
+        # results are tuples; map by FIELD_IDX to the output column order
         for r in results:
+            def gv(field):
+                return (r[FIELD_IDX[field]] if len(r) > FIELD_IDX[field] else '')
+
             ws.append([
-                r.get('item_no'),
-                r.get('description'),
-                r.get('product_division'),
-                r.get('material_group'),
-                r.get('material_group_desc'),
-                r.get('manufacturer_name'),
-                r.get('manufacturer_item_no'),
-                r.get('sales_status'),
-                r.get('product_manager'),
-                r.get('sub_item')
+                gv('item_no'),
+                gv('description'),
+                gv('product_division'),
+                gv('material_group'),
+                gv('material_group_desc'),
+                gv('manufacturer_name'),
+                gv('manufacturer_item_no'),
+                gv('sales_status'),
+                gv('product_manager'),
+                gv('sub_item')
             ])
 
         bio = io.BytesIO()
