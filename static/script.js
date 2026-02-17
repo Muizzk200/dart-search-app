@@ -107,7 +107,7 @@ async function uploadFile() {
                 uploadBtn.textContent = 'Upload File';
                 try {
                     const data = JSON.parse(xhr.responseText || '{}');
-                    if (xhr.status >= 200 && xhr.status < 300 && data.success) {
+                    if (data.success) {
                         showStatus(uploadStatus, data.message, 'success');
                         fileName.textContent = file.name;
                         rowCount.textContent = (data.row_count || 0).toLocaleString();
@@ -117,7 +117,7 @@ async function uploadFile() {
                         searchInput.focus();
                         fetchFilters();
                     } else {
-                        showStatus(uploadStatus, data.message || 'Upload failed', 'error');
+                        showStatus(uploadStatus, data.message, 'error');
                         isFileLoaded = false;
                         fileInfo.style.display = 'none';
                     }
