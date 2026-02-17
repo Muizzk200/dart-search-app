@@ -83,6 +83,35 @@ async function uploadFile() {
     formData.append('file', file);
 
     // Use XMLHttpRequest to report upload progress
+    // helper to extract a useful message from a Response or XHR-like object
+    async function parseResponseMessage(res) {
+        try {
+            // fetch Response
+            if (typeof Response !== 'undefined' && res instanceof Response) {
+                const data = await res.clone().json();
+                return data?.message || '';
+            }
+        } catch (e) {
+            // fallthrough to try other strategies
+        }
+
+        // XHR-like object with responseText
+        try {
+            if (res && typeof res.responseText === 'string') {
+                try {
+                    const data = JSON.parse(res.responseText || '{}');
+                    return data?.message || '';
+                } catch {
+                    return res.responseText || '';
+                }
+            }
+        } catch (e) {
+            // ignore
+        }
+
+        return '';
+    }
+
     return new Promise((resolve) => {
         const xhr = new XMLHttpRequest();
         const progressWrap = document.querySelector('.upload-progress');
@@ -106,9 +135,17 @@ async function uploadFile() {
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = 'Upload File';
                 try {
-                    const data = JSON.parse(xhr.responseText || '{}');
-                    if (data.success) {
-                        showStatus(uploadStatus, data.message, 'success');
+                    // Prefer structured JSON message, but gracefully fall back to raw text
+                    const msgFromResp = await parseResponseMessage(xhr);
+
+                    let data = {};
+                    try { data = JSON.parse(xhr.responseText || '{}'); } catch (e) { /* ignore */ }
+
+                    const defaultMsg = 'Upload failed. Check Render logs for details.';
+
+                    if (xhr.status >= 200 && xhr.status < 300 && data.success) {
+                        // success path
+                        showStatus(uploadStatus, data.message || msgFromResp || 'File uploaded', 'success');
                         fileName.textContent = file.name;
                         rowCount.textContent = (data.row_count || 0).toLocaleString();
                         fileInfo.style.display = 'block';
@@ -117,12 +154,16 @@ async function uploadFile() {
                         searchInput.focus();
                         fetchFilters();
                     } else {
-                        showStatus(uploadStatus, data.message, 'error');
+                        // error path: prefer parsed message, then structured json message, then raw text, then default
+                        let msg = msgFromResp || data.message || xhr.responseText || '';
+                        if (!msg || !String(msg).trim()) msg = defaultMsg;
+                        showStatus(uploadStatus, msg, 'error');
                         isFileLoaded = false;
                         fileInfo.style.display = 'none';
                     }
                 } catch (err) {
-                    showStatus(uploadStatus, 'Upload failed: ' + err.message, 'error');
+                    const msg = err?.message || 'Upload failed';
+                    showStatus(uploadStatus, msg, 'error');
                     isFileLoaded = false;
                     fileInfo.style.display = 'none';
                 }
@@ -130,6 +171,19 @@ async function uploadFile() {
                 setTimeout(() => { progressWrap.style.display = 'none'; }, 800);
                 resolve();
             }
+        };
+
+        // Network / transport error handler — ensure a visible message
+        xhr.onerror = function (e) {
+            uploadBtn.disabled = false;
+            uploadBtn.textContent = 'Upload File';
+            const evtMsg = (e && e.message) ? e.message : 'Network error during upload';
+            const msg = evtMsg || 'Upload failed. Check Render logs for details.';
+            showStatus(uploadStatus, msg, 'error');
+            isFileLoaded = false;
+            fileInfo.style.display = 'none';
+            progressWrap.style.display = 'none';
+            resolve();
         };
 
         xhr.open('POST', '/upload', true);
