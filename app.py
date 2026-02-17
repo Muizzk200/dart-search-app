@@ -43,6 +43,8 @@ def build_header_index(header_row):
             ...
         }
     """
+    REQUIRED_HEADERS = ['description']
+    
     EXPECTED_HEADERS = [
         'item',
         'description',
@@ -63,9 +65,10 @@ def build_header_index(header_row):
             normalized = str(header).strip().lower()
             header_index[normalized] = idx
     
-    # Check if description column exists (only mandatory column)
-    if 'description' not in header_index:
-        return None, "Missing required 'Description' column"
+    # Check if required columns exist (only description is mandatory)
+    for required_header in REQUIRED_HEADERS:
+        if required_header not in header_index:
+            return None, f"Missing required column: {required_header}"
     
     # Add missing expected columns with -1 index to indicate they don't exist
     for expected_header in EXPECTED_HEADERS:
@@ -126,24 +129,34 @@ def parse_excel_file(filepath):
                 if not short_desc or not str(short_desc).strip():
                     continue
                 
-                # Helper function to safely extract column values
-                def get_col_value(col_name):
-                    idx = header_index[col_name]
-                    if idx == -1:  # Column doesn't exist
-                        return None
-                    return row[idx] if len(row) > idx else None
-                
                 # Extract values using header-based index mapping
                 # Handle missing columns gracefully by returning None
-                item_no = get_col_value('item')
-                product_div = get_col_value('product division')
-                material_group = get_col_value('material group')
-                material_group_desc = get_col_value('material group desc')
-                mfg_name = get_col_value('mfr name')
-                mfg_item_no = get_col_value('mfr item')
-                sales_status = get_col_value('sales status')
-                product_manager = get_col_value('product mgr')
-                sub_item = get_col_value('sub item')
+                idx = header_index.get('item')
+                item_no = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
+                
+                idx = header_index.get('product division')
+                product_div = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
+                
+                idx = header_index.get('material group')
+                material_group = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
+                
+                idx = header_index.get('material group desc')
+                material_group_desc = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
+                
+                idx = header_index.get('mfr name')
+                mfg_name = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
+                
+                idx = header_index.get('mfr item')
+                mfg_item_no = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
+                
+                idx = header_index.get('sales status')
+                sales_status = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
+                
+                idx = header_index.get('product mgr')
+                product_manager = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
+                
+                idx = header_index.get('sub item')
+                sub_item = row[idx] if idx is not None and idx != -1 and len(row) > idx else None
 
                 rows.append({
                     'item_no': item_no,
@@ -210,24 +223,34 @@ def parse_csv_file(filepath):
                     if not short_desc or not str(short_desc).strip():
                         continue
                     
-                    # Helper function to safely extract column values
-                    def get_col_value(col_name):
-                        idx = header_index[col_name]
-                        if idx == -1:  # Column doesn't exist
-                            return None
-                        return r[idx] if len(r) > idx else None
-                    
                     # Extract values using header-based index mapping
                     # Handle missing columns gracefully by returning None
-                    item_no = get_col_value('item')
-                    product_div = get_col_value('product division')
-                    material_group = get_col_value('material group')
-                    material_group_desc = get_col_value('material group desc')
-                    mfg_name = get_col_value('mfr name')
-                    mfg_item_no = get_col_value('mfr item')
-                    sales_status = get_col_value('sales status')
-                    product_manager = get_col_value('product mgr')
-                    sub_item = get_col_value('sub item')
+                    idx = header_index.get('item')
+                    item_no = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
+                    
+                    idx = header_index.get('product division')
+                    product_div = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
+                    
+                    idx = header_index.get('material group')
+                    material_group = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
+                    
+                    idx = header_index.get('material group desc')
+                    material_group_desc = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
+                    
+                    idx = header_index.get('mfr name')
+                    mfg_name = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
+                    
+                    idx = header_index.get('mfr item')
+                    mfg_item_no = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
+                    
+                    idx = header_index.get('sales status')
+                    sales_status = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
+                    
+                    idx = header_index.get('product mgr')
+                    product_manager = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
+                    
+                    idx = header_index.get('sub item')
+                    sub_item = r[idx] if idx is not None and idx != -1 and len(r) > idx else None
 
                     rows.append({
                         'item_no': item_no,
