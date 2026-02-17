@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEDLINE DART SDSE V1.0 by MUIZZ KACHHI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <img src="{{ url_for('static', filename='medline_logo.webp') }}" alt="Company Logo" class="company-logo" />
+            </div>
+            <div class="header-content">
+                <h1>MEDLINE DART SDSE V1.0</h1>
+                <p class="full-form">Data Analysis and Reporting Tool Short Description Search Engine Version 1.0</p>
+                <p class="subtitle">Search short descriptions with filters</p>
+            </div>
+            <div class="branding">MEDLINE DART SDSE V1.0 by MUIZZ KACHHI</div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Instructions Section -->
+            <section class="instructions-section">
+                <h2>📖 How to Use MEDLINE DART SDSE V1.0</h2>
+                <div class="instructions-grid">
+                    <div class="instruction-card">
+                        <h3>Step 1: Prepare Your File</h3>
+                        <p>Export your Item Master to Excel (.xlsx) or CSV and ensure the worksheet with item data is named <strong>"DART"</strong> (or the first sheet will be used).</p>
+                    </div>
+                    <div class="instruction-card">
+                        <h3>Step 2: Upload File</h3>
+                        <p>Upload the DART file (.xlsx or .csv). CSV uploads are faster for very large files.</p>
+                    </div>
+                    <div class="instruction-card">
+                        <h3>Step 3: Search</h3>
+                        <p>Type keywords into the search box to find products. You can also use the filters below to narrow results.</p>
+                    </div>
+                    <div class="instruction-card">
+                        <h3>Step 4: View Results</h3>
+                        <p>Results show Item No, Description, Product Division, Material Group, Material Group Desc, Manufacturer Name, Manufacturer Item No, Sales Status, Product Manager, and Sub Item.</p>
+                    </div>
+                    <div class="instruction-card">
+                        <h3>Search Tips</h3>
+                        <ul>
+                            <li>Multiple keywords in any order are supported</li>
+                            <li>Keywords are case-insensitive</li>
+                            <li>Partial word matches work (e.g., "bolt" matches "bolts")</li>
+                            <li>Use the filter search boxes to quickly find options, and select multiple values with the checkboxes.</li>
+                        </ul>
+                    </div>
+                    <div class="instruction-card">
+                        <h3>Clear Filters</h3>
+                        <p>Use the Reset Filters button to clear selections and restore full option lists.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Upload Section -->
+            <section class="upload-section">
+                <h2>📁 Upload DART File</h2>
+                <div class="upload-container">
+                    <div class="file-input-wrapper">
+                        <input type="file" id="fileInput" accept=".xlsx,.csv" />
+                        <label for="fileInput" class="file-label">Choose file (.xlsx or .csv)</label>
+                    </div>
+                    <button id="uploadBtn" class="btn btn-primary">Upload File</button>
+                    <button id="clearUploadBtn" class="btn btn-secondary">Clear Upload</button>
+                    <div id="uploadStatus" class="status-message"></div>
+                </div>
+                <div class="upload-progress" style="display:none; margin-top:10px;">
+                    <progress id="uploadProgress" value="0" max="100" style="width:100%;"></progress>
+                    <div id="uploadProgressText" style="text-align:right; font-size:0.9rem; color:var(--text-light);">0%</div>
+                </div>
+                <div id="fileInfo" class="file-info" style="display: none;">
+                    <p>✓ File loaded: <strong id="fileName"></strong></p>
+                    <p>Rows available: <strong id="rowCount"></strong></p>
+                </div>
+            </section>
+
+            <!-- Search Section -->
+            <section class="search-section">
+                <h2>🔍 Search Short Descriptions</h2>
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Enter keywords (e.g., 'bolt steel m6')" 
+                        class="search-input"
+                    />
+                    <button id="searchBtn" class="btn btn-success">Search</button>
+                    <button id="exportBtn" class="btn btn-primary">Export</button>
+                    <button id="clearSearchBtn" class="btn btn-secondary">Clear Search</button>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters-container">
+                    <div class="filter-group">
+                        <input id="manufacturerSearch" class="filter-search" placeholder="Search manufacturers..." />
+                        <div id="manufacturerList" class="checkbox-list" aria-label="Manufacturer options"></div>
+                    </div>
+                    <div class="filter-group">
+                        <input id="productDivisionSearch" class="filter-search" placeholder="Search product divisions..." />
+                        <div id="productDivisionList" class="checkbox-list" aria-label="Product division options"></div>
+                    </div>
+                    <div class="filter-group">
+                        <input id="materialGroupSearch" class="filter-search" placeholder="Search material groups..." />
+                        <div id="materialGroupList" class="checkbox-list" aria-label="Material group options"></div>
+                    </div>
+                    <div class="filter-group">
+                        <input id="materialGroupDescSearch" class="filter-search" placeholder="Search material group descriptions..." />
+                        <div id="materialGroupDescList" class="checkbox-list" aria-label="Material group desc options"></div>
+                    </div>
+                    <div class="filter-group">
+                        <input id="salesStatusSearch" class="filter-search" placeholder="Search sales statuses..." />
+                        <div id="salesStatusList" class="checkbox-list" aria-label="Sales status options"></div>
+                    </div>
+                    <div class="filter-group">
+                        <input id="productManagerSearch" class="filter-search" placeholder="Search product managers..." />
+                        <div id="productManagerList" class="checkbox-list" aria-label="Product manager options"></div>
+                    </div>
+                    <div class="filter-group">
+                        <input id="subItemSearch" class="filter-search" placeholder="Search sub items..." />
+                        <div id="subItemList" class="checkbox-list" aria-label="Sub item options"></div>
+                    </div>
+                    <button id="resetFiltersBtn" class="btn btn-secondary">Reset Filters</button>
+                </div>
+                <div id="searchStatus" class="status-message"></div>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section">
+                <h2>📊 Search Results</h2>
+                <div id="resultsContainer" class="results-container">
+                    <p class="placeholder-text">Upload a file and search to see results here</p>
+                </div>
+            </section>
+
+            <!-- Info Sections -->
+            <section class="info-section">
+                <h3>❓ Why DART SDSE V1.0?</h3>
+                <ul>
+                    <li><strong>Overcomes Excel Limitations:</strong> Built to solve keyword search constraints in large Excel files</li>
+                    <li><strong>Order-Independent Search:</strong> Keywords can be entered in any order</li>
+                    <li><strong>Fast Performance:</strong> Faster than SAP filters or unwieldy Excel operations</li>
+                    <li><strong>Handles Large Datasets:</strong> Designed to work with up to 200,000 product rows</li>
+                    <li><strong>Future Enhancement:</strong> Upcoming versions may include direct Item No and Manufacturer Item No search</li>
+                </ul>
+            </section>
+
+            <section class="info-section">
+                <h3>⚠️ Limitations</h3>
+                <ul>
+                    <li><strong>Short Description Only:</strong> Search is limited to the Short Description column</li>
+                    <li><strong>Exact Wording Matters:</strong> Differences in spelling or wording may affect results</li>
+                    <li><strong>Partial Matches Help:</strong> Using partial keywords reduces wording limitations but doesn't eliminate them entirely</li>
+                </ul>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>MEDLINE DART SDSE V1.0 by MUIZZ KACHHI</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
