@@ -5,7 +5,9 @@ import os
 from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'uploads')
+# Use an absolute uploads folder based on the current working directory so
+# the path is stable when running under gunicorn / Render.
+app.config['UPLOAD_FOLDER'] = os.path.join(os.getcwd(), 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 ALLOWED_EXTENSIONS = {'xlsx', 'csv'}
 BLANK_LABEL = '(blank)'
@@ -19,6 +21,11 @@ loaded_data = {
 def allowed_file(filename):
     """Check if file extension is allowed"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# Ensure the uploads directory exists at module import time so the directory
+# is present when the app is started by a WSGI server (e.g. gunicorn on Render).
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 
 def build_header_index(header_row):
