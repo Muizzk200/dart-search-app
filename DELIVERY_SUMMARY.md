@@ -1,4 +1,4 @@
-# DART SDSE V1.0 - Project Delivery Summary
+# DART-Search V2.0 - Project Delivery Summary
 
 ## ✅ Deliverables Completed
 
@@ -309,7 +309,7 @@ All code is clean, well-commented, and follows best practices.
 
 ## ✨ Summary
 
-Your DART SDSE V1.0 web application is **production-ready** with:
+Your DART-Search V2.0 web application is **production-ready** with:
 - ✅ Exact Excel formula replication
 - ✅ Professional UI with instructions
 - ✅ Fast, reliable search
@@ -321,5 +321,5 @@ Your DART SDSE V1.0 web application is **production-ready** with:
 
 ---
 
-**DART SDSE V1.0 – Made by MUIZZ**
+**DART-Search V2.0 – Made by MUIZZ**
 January 2025

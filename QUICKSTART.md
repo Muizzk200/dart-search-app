@@ -1,4 +1,4 @@
-# DART SDSE V1.0 - Quick Start Guide
+# DART-Search V2.0 - Quick Start Guide
 
 ## Get Started in 3 Minutes
 
@@ -83,4 +83,4 @@ See `README.md` for detailed documentation.
 
 ---
 
-**DART SDSE V1.0 – Made by MUIZZ**
+**DART-Search V2.0 – Made by MUIZZ**

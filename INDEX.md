@@ -1,6 +1,6 @@
-# 📖 DART SDSE V1.0 - Documentation Index
+# 📖 DART-Search V2.0 - Documentation Index
 
-## **DART SDSE V1.0 – Made by MUIZZ**
+## **DART-Search V2.0 – Made by MUIZZ**
 
 Welcome! This folder contains your complete web application for searching product short descriptions.
 
@@ -195,7 +195,7 @@ Row 2-...: Your data
 
 | Aspect | Details |
 |---|---|
-| **Name** | DART SDSE V1.0 |
+| **Name** | DART-Search V2.0 |
 | **Purpose** | Search product short descriptions |
 | **Author** | MUIZZ |
 | **Technology** | Python Flask + HTML/CSS/JavaScript |
@@ -263,7 +263,7 @@ Then open: http://localhost:5000
 
 ---
 
-**DART SDSE V1.0 – Made by MUIZZ**
+**DART-Search V2.0 – Made by MUIZZ**
 
 *Short Description Search Engine - Making product discovery fast & easy*
 

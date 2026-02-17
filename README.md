@@ -1,5 +1,6 @@
-<<<<<<< HEAD
-# DART SDSE V1.0
+# dart-search-app
+DART Search
+# DART-Search V2.0
 
 ## Short Description Search Engine
 
@@ -9,9 +10,9 @@
 
 ## Overview
 
-DART SDSE V1.0 is a web-based search engine designed to help you quickly find products by searching their Short Descriptions. It replicates the powerful search functionality of an Excel-based DART tool but with a user-friendly web interface.
+DART-Search V2.0 is a web-based search engine designed to help you quickly find products by searching their Short Descriptions. It replicates the powerful search functionality of an Excel-based DART tool but with a user-friendly web interface.
 
-Instead of struggling with Excel filters or SAP searches, DART SDSE V1.0 lets you:
+Instead of struggling with Excel filters or SAP searches, DART-Search V2.0 lets you:
 - Upload an Excel DART file with your product inventory
 - Search using multiple keywords in any order
 - Get instant results with highlighted matches
@@ -151,7 +152,7 @@ Search results display the following information in this exact order:
 
 ---
 
-## Why DART SDSE V1.0?
+## Why DART-Search V2.0?
 
 ### Problems It Solves
 - **Excel Limitations:** Excel's built-in search is cumbersome with large datasets
@@ -267,7 +268,7 @@ for each product in dataset:
 
 ## Author
 
-**DART SDSE V1.0 – Made by MUIZZ**
+**DART-Search V2.0 – Made by MUIZZ**
 
 ---
 
@@ -290,13 +291,9 @@ For internal use. Contact the author for distribution or modifications.
 
 ## Support & Feedback
 
-For issues, suggestions, or questions about DART SDSE V1.0, please contact MUIZZ.
+For issues, suggestions, or questions about DART-Search V2.0, please contact MUIZZ.
 
 ---
 
 **Last Updated:** January 2025  
 **Status:** Active & Maintained
-=======
-# dart-search-app
-DART Search
->>>>>>> 267c2d54ee45740ad5c0e764eea394d243db91f3

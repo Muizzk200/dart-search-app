@@ -1,6 +1,6 @@
-# DART SDSE V1.0 - Complete Setup Instructions
+# DART-Search V2.0 - Complete Setup Instructions
 
-## Welcome to DART SDSE V1.0!
+## Welcome to DART-Search V2.0!
 
 This document provides step-by-step instructions to set up and run the application.
 
@@ -118,7 +118,7 @@ or
 http://127.0.0.1:5000
 ```
 
-You should see the DART SDSE V1.0 interface!
+You should see the DART-Search V2.0 interface!
 
 ---
 
@@ -416,7 +416,7 @@ For issues or questions:
 
 ## License & Credits
 
-**DART SDSE V1.0 – Made by MUIZZ**
+**DART-Search V2.0 – Made by MUIZZ**
 
 Built with:
 - Flask (Python web framework)

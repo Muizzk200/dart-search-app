@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MEDLINE DART SDSE V1.0 by MUIZZ KACHHI</title>
+    <title>DART-Search V2.0 by MUIZZ KACHHI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -14,38 +14,43 @@
                 <img src="{{ url_for('static', filename='medline_logo.webp') }}" alt="Company Logo" class="company-logo" />
             </div>
             <div class="header-content">
-                <h1>MEDLINE DART SDSE V1.0</h1>
-                <p class="full-form">Data Analysis and Reporting Tool Short Description Search Engine Version 1.0</p>
+                <h1>DART-Search V2.0</h1>
+                <p class="full-form">Data Analysis and Reporting Tool - Search Engine Version 2.0</p>
                 <p class="subtitle">Search short descriptions with filters</p>
             </div>
-            <div class="branding">MEDLINE DART SDSE V1.0 by MUIZZ KACHHI</div>
+                <div class="branding">DART-Search V2.0 by MUIZZ KACHHI</div>
         </header>
 
         <!-- Main Content -->
         <main class="main-content">
             <!-- Instructions Section -->
             <section class="instructions-section">
-                <h2>📖 How to Use MEDLINE DART SDSE V1.0</h2>
+                <h2>📖 How to Use DART-Search V2.0</h2>
                 <div class="instructions-grid">
                     <div class="instruction-card">
-                        <h3>Step 1: Prepare Your File</h3>
-                        <p>Export your Item Master to Excel (.xlsx) or CSV and ensure the worksheet with item data is named <strong>"DART"</strong> (or the first sheet will be used).</p>
+                        <h3>Step 1: Export Your DART Report</h3>
+                        <p>Export your Division DART report to Excel (.xlsx) or CSV.</p>
                     </div>
                     <div class="instruction-card">
-                        <h3>Step 2: Upload File</h3>
+                        <h3>Step 2: Report Options (Important)</h3>
+                        <p>While pulling your Division DART report, go to <strong>Options</strong> and check/select everything.<br/>Only <strong>"Exclude Discontinued Items"</strong> is optional.</p>
+                    </div>
+                    <div class="instruction-card">
+                        <h3>Step 3: Upload File</h3>
                         <p>Upload the DART file (.xlsx or .csv). CSV uploads are faster for very large files.</p>
                     </div>
                     <div class="instruction-card">
-                        <h3>Step 3: Search</h3>
-                        <p>Type keywords into the search box to find products. You can also use the filters below to narrow results.</p>
+                        <h3>Step 4: Search</h3>
+                        <p>Search using keywords OR a Medline Item No.<br/>You can also use the filters below to narrow results.</p>
                     </div>
                     <div class="instruction-card">
-                        <h3>Step 4: View Results</h3>
-                        <p>Results show Item No, Description, Product Division, Material Group, Material Group Desc, Manufacturer Name, Manufacturer Item No, Sales Status, Product Manager, and Sub Item.</p>
+                        <h3>Step 5: View Results</h3>
+                        <p>Results include Item No, Description, Product Division, Material Group, Material Group Desc, Manufacturer Name, Manufacturer Item No, Sales Status, Product Manager, and Sub Item.</p>
                     </div>
                     <div class="instruction-card">
                         <h3>Search Tips</h3>
                         <ul>
+                            <li>You can also search using a Medline Item No (Item).</li>
                             <li>Multiple keywords in any order are supported</li>
                             <li>Keywords are case-insensitive</li>
                             <li>Partial word matches work (e.g., "bolt" matches "bolts")</li>
@@ -141,7 +146,7 @@
 
             <!-- Info Sections -->
             <section class="info-section">
-                <h3>❓ Why DART SDSE V1.0?</h3>
+                <h3>❓ Why DART-Search V2.0?</h3>
                 <ul>
                     <li><strong>Overcomes Excel Limitations:</strong> Built to solve keyword search constraints in large Excel files</li>
                     <li><strong>Order-Independent Search:</strong> Keywords can be entered in any order</li>
@@ -163,7 +168,7 @@
 
         <!-- Footer -->
         <footer class="footer">
-            <p>MEDLINE DART SDSE V1.0 by MUIZZ KACHHI</p>
+            <p>DART-Search V2.0 by MUIZZ KACHHI</p>
         </footer>
     </div>
 

@@ -1,8 +1,8 @@
-# ✅ DART SDSE V1.0 - Project Complete
+# ✅ DART-Search V2.0 - Project Complete
 
 ## 🎉 Your Web Application is Ready!
 
-**DART SDSE V1.0 – Made by MUIZZ**
+**DART-Search V2.0 – Made by MUIZZ**
 
 Your complete DART Short Description Search Engine web application has been built and is ready to use.
 
@@ -370,7 +370,7 @@ Shows exactly these columns in order:
 
 ## 📝 Version Information
 
-- **Product:** DART SDSE V1.0
+- **Product:** DART-Search V2.0
 - **Type:** Short Description Search Engine
 - **Author:** MUIZZ
 - **Version:** 1.0 (January 2025)
@@ -381,7 +381,7 @@ Shows exactly these columns in order:
 
 ## 🎉 Ready to Use!
 
-Everything is set up and ready to go. Your DART SDSE V1.0 application is:
+Everything is set up and ready to go. Your DART-Search V2.0 application is:
 
 ✅ **Built** - Complete application
 ✅ **Tested** - Search logic verified
@@ -453,7 +453,7 @@ You now have a professional, production-ready web application that:
 
 ---
 
-**DART SDSE V1.0 – Made by MUIZZ**
+**DART-Search V2.0 – Made by MUIZZ**
 
 *Short Description Search Engine - Making product discovery fast, easy, and powerful*
 
